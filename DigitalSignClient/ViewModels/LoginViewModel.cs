@@ -1,5 +1,6 @@
 ﻿using DigitalSignClient.Models;
 using DigitalSignClient.Services;
+using System.Net.Http;
 using System.Windows.Input;
 
 namespace DigitalSignClient.ViewModels
@@ -15,6 +16,9 @@ namespace DigitalSignClient.ViewModels
         public LoginViewModel(ApiService apiService)
         {
             _apiService = apiService;
+            // ✅ Giá trị mặc định
+            Username = "admin";
+            Password = "Admin@123";
             LoginCommand = new RelayCommand(async _ => await LoginAsync(), _ => CanLogin());
         }
 
@@ -79,7 +83,13 @@ namespace DigitalSignClient.ViewModels
             }
             catch (Exception ex)
             {
-                ErrorMessage = $"Lỗi: {ex.Message}";
+                // ✅ Dùng thông báo thân thiện nếu có
+                ErrorMessage = ex.Message switch
+                {
+                    string msg when msg.Contains("máy chủ") => msg,
+                    string msg when msg.Contains("thời gian chờ") => msg,
+                    _ => "Không thể kết nối tới máy chủ. Vui lòng kiểm tra lại, có thể server chưa được mở."
+                };
             }
             finally
             {

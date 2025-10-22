@@ -62,8 +62,6 @@ namespace DigitalSignClient.Services
                 if (response.IsSuccessStatusCode)
                 {
                     var responseContent = await response.Content.ReadAsStringAsync();
-
-                    // Log để debug
                     System.Diagnostics.Debug.WriteLine($"Login Response: {responseContent}");
 
                     var loginResponse = JsonConvert.DeserializeObject<LoginResponse>(responseContent);
@@ -83,14 +81,23 @@ namespace DigitalSignClient.Services
 
                 return null;
             }
+            catch (HttpRequestException)
+            {
+                // ✅ Lỗi khi không kết nối được server
+                throw new Exception($"Không thể kết nối tới máy chủ {_httpClient.BaseAddress}. Vui lòng kiểm tra lại, có thể server chưa được mở.");
+            }
+            catch (TaskCanceledException)
+            {
+                // ✅ Lỗi khi request timeout
+                throw new Exception("Kết nối tới máy chủ bị gián đoạn hoặc quá thời gian chờ.");
+            }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Login exception: {ex.Message}");
-                System.Windows.MessageBox.Show($"Lỗi kết nối: {ex.Message}", "Lỗi",
-                    System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
-                return null;
+                // ✅ Lỗi không xác định khác
+                throw new Exception($"Lỗi không xác định: {ex.Message}");
             }
         }
+
 
         public async Task<List<Document>?> GetDocumentsAsync()
         {
@@ -144,7 +151,15 @@ namespace DigitalSignClient.Services
                 return null;
             }
         }
+        public async Task<bool> UploadSignedDocumentAsync(Guid documentId, string signedFilePath)
+        {
+            using var form = new MultipartFormDataContent();
+            using var fs = File.OpenRead(signedFilePath);
+            form.Add(new StreamContent(fs), "file", Path.GetFileName(signedFilePath));
 
+            var response = await _httpClient.PostAsync($"Documents/{documentId}/upload-signed", form);
+            return response.IsSuccessStatusCode;
+        }
         public async Task<bool> SignDocumentAsync(Guid documentId, string reason, string location)
         {
             try

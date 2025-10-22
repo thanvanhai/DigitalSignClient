@@ -17,7 +17,8 @@ namespace DigitalSignClient.Views
             InitializeComponent();
             _viewModel = viewModel;
             DataContext = _viewModel;
-
+            // ✅ Đồng bộ password mặc định hiển thị trong UI
+            PasswordBox.Password = _viewModel.Password;
             _viewModel.LoginSuccessful += OnLoginSuccessful;
         }
 

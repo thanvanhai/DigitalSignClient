@@ -125,32 +125,26 @@ namespace DigitalSignClient.ViewModels
 
             try
             {
-                var result = MessageBox.Show(
-                    $"Bạn có chắc muốn ký file '{SelectedDocument.OriginalFileName}'?",
-                    "Xác nhận ký",
-                    MessageBoxButton.YesNo,
-                    MessageBoxImage.Question);
-
-                if (result == MessageBoxResult.Yes)
+                // 1️⃣ Download file PDF tạm để hiển thị
+                IsLoading = true;
+                var tempPath = Path.Combine(Path.GetTempPath(), SelectedDocument.OriginalFileName);
+                var fileData = await _apiService.DownloadDocumentAsync(SelectedDocument.Id);
+                if (fileData == null)
                 {
-                    IsLoading = true;
-                    var success = await _apiService.SignDocumentAsync(
-                        SelectedDocument.Id,
-                        "Ký bởi WPF Client",
-                        "Việt Nam");
-
-                    if (success)
-                    {
-                        MessageBox.Show("Ký thành công!", "Thông báo",
-                            MessageBoxButton.OK, MessageBoxImage.Information);
-                        await LoadDocumentsAsync();
-                    }
-                    else
-                    {
-                        MessageBox.Show("Ký thất bại!", "Lỗi",
-                            MessageBoxButton.OK, MessageBoxImage.Error);
-                    }
+                    MessageBox.Show("Không thể tải file để ký.", "Lỗi",
+                        MessageBoxButton.OK, MessageBoxImage.Error);
+                    return;
                 }
+
+                await File.WriteAllBytesAsync(tempPath, fileData);
+
+                // 2️⃣ Mở cửa sổ ký
+                var signWindow = new Views.SignDocumentWindow(tempPath, SelectedDocument.Id);
+                signWindow.Owner = Application.Current.MainWindow;
+                signWindow.ShowDialog();
+
+                // 3️⃣ Sau khi ký xong thì tải lại danh sách
+                await LoadDocumentsAsync();
             }
             catch (Exception ex)
             {
