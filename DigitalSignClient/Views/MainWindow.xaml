@@ -1,75 +1,128 @@
-﻿<Window x:Class="DigitalSignClient.Views.MainWindow"
+﻿<mah:MetroWindow x:Class="DigitalSignClient.Views.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Digital Sign Client" Height="700" Width="1200"
-        WindowStartupLocation="CenterScreen">
+        xmlns:mah="http://metro.mahapps.com/winfx/xaml/controls"
+        xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
+        Title="Digital Sign Client" 
+        Height="700" 
+        Width="1200"
+        WindowStartupLocation="CenterScreen"
+        GlowBrush="{DynamicResource MahApps.Brushes.Accent}"
+        BorderThickness="1"
+        WindowTransitionsEnabled="True">
 
-    <Window.Resources>
-        <Style x:Key="MenuButtonStyle" TargetType="Button">
-            <Setter Property="Padding" Value="10"/>
-            <Setter Property="Margin" Value="5"/>
-            <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="Background" Value="#2196F3"/>
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border Background="{TemplateBinding Background}" 
-                                CornerRadius="4"
-                                Padding="{TemplateBinding Padding}">
-                            <ContentPresenter HorizontalAlignment="Center" 
-                                              VerticalAlignment="Center"/>
-                        </Border>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-            <Style.Triggers>
-                <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="Opacity" Value="0.8"/>
-                </Trigger>
-            </Style.Triggers>
-        </Style>
-    </Window.Resources>
+    <!-- KEEP ORIGINAL TITLEBAR (LEFT / RIGHT WINDOW COMMANDS) -->
+    <mah:MetroWindow.LeftWindowCommands>
+        <mah:WindowCommands>
+            <StackPanel Orientation="Horizontal">
+                <iconPacks:PackIconMaterial Kind="FileDocumentEdit" 
+                                            Width="20" 
+                                            Height="20" 
+                                            VerticalAlignment="Center" 
+                                            Margin="0,0,8,0"/>
+                <TextBlock Text="Digital Sign Client" 
+                           FontSize="16" 
+                           FontWeight="Bold" 
+                           VerticalAlignment="Center"/>
+            </StackPanel>
+        </mah:WindowCommands>
+    </mah:MetroWindow.LeftWindowCommands>
+
+    <mah:MetroWindow.RightWindowCommands>
+        <mah:WindowCommands>
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                <iconPacks:PackIconMaterial Kind="Account" 
+                                            Width="18" 
+                                            Height="18" 
+                                            VerticalAlignment="Center" 
+                                            Margin="0,0,8,0"/>
+                <TextBlock Text="{Binding CurrentUser.FullName}" 
+                           FontSize="14" 
+                           VerticalAlignment="Center" 
+                           Margin="0,0,15,0"/>
+                <Button Content="Đăng xuất" 
+                        Command="{Binding LogoutCommand}"/>
+            </StackPanel>
+        </mah:WindowCommands>
+    </mah:MetroWindow.RightWindowCommands>
 
     <Grid>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-        </Grid.RowDefinitions>
+        <mah:HamburgerMenu x:Name="HamburgerMenuControl"
+                   DisplayMode="CompactInline"
+                   IsPaneOpen="True"
+                   CompactPaneLength="48"
+                   OpenPaneLength="230"
+                   PaneBackground="{DynamicResource MahApps.Brushes.Accent}"
+                   PaneForeground="White"
+                   Foreground="{DynamicResource MahApps.Brushes.ThemeForeground}"
+                   ItemClick="HamburgerMenuControl_ItemClick">
 
-        <!-- Header -->
-        <Border Background="#2196F3" Height="70">
-            <Grid Margin="20,0">
-                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                    <TextBlock Text="Digital Sign Client" 
-                               FontSize="22" 
-                               FontWeight="Bold" 
-                               Foreground="White"/>
-                </StackPanel>
+            <!-- ✅ Template hiển thị từng item -->
+            <mah:HamburgerMenu.ItemTemplate>
+                <DataTemplate DataType="{x:Type mah:HamburgerMenuIconItem}">
+                    <StackPanel Orientation="Horizontal" Margin="10,5">
+                        <ContentPresenter Content="{Binding Icon}" Width="24" Height="24" />
+                        <TextBlock Text="{Binding Label}"
+                           Margin="10,0,0,0"
+                           VerticalAlignment="Center"
+                           FontSize="14"
+                           Foreground="White"/>
+                    </StackPanel>
+                </DataTemplate>
+            </mah:HamburgerMenu.ItemTemplate>
 
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
-                    <TextBlock Text="{Binding CurrentUser.FullName}" 
-                               FontSize="15" Foreground="White" VerticalAlignment="Center" Margin="0,0,10,0"/>
-                    <Button Content="Đăng xuất" Command="{Binding LogoutCommand}" Style="{StaticResource MenuButtonStyle}" Background="Transparent" Foreground="White" BorderBrush="White" BorderThickness="1"/>
-                </StackPanel>
-            </Grid>
-        </Border>
+            <!-- ✅ Template hiển thị item đang được chọn -->
+            <mah:HamburgerMenu.OptionsItemTemplate>
+                <DataTemplate DataType="{x:Type mah:HamburgerMenuIconItem}">
+                    <StackPanel Orientation="Horizontal" Margin="10,5">
+                        <ContentPresenter Content="{Binding Icon}" Width="24" Height="24" />
+                        <TextBlock Text="{Binding Label}"
+                           Margin="10,0,0,0"
+                           VerticalAlignment="Center"
+                           FontSize="14"
+                           Foreground="White"
+                           FontWeight="Bold"/>
+                    </StackPanel>
+                </DataTemplate>
+            </mah:HamburgerMenu.OptionsItemTemplate>
 
-        <!-- Main Content -->
-        <DockPanel Grid.Row="1">
+            <!-- ✅ Danh sách item -->
+            <mah:HamburgerMenu.ItemsSource>
+                <mah:HamburgerMenuItemCollection>
+                    <mah:HamburgerMenuIconItem Label="Dashboard" Tag="Dashboard">
+                        <mah:HamburgerMenuIconItem.Icon>
+                            <iconPacks:PackIconMaterial Kind="ViewDashboard" Width="22" Height="22"/>
+                        </mah:HamburgerMenuIconItem.Icon>
+                    </mah:HamburgerMenuIconItem>
 
-            <!-- Sidebar -->
-            <StackPanel DockPanel.Dock="Left" Width="200" Background="#F5F5F5">
-                <Button Content="Dashboard" Command="{Binding ShowDashboardCommand}" Style="{StaticResource MenuButtonStyle}"/>
-                <Button Content="Quản lý loại tài liệu" Command="{Binding ShowDocumentTypeCommand}" Style="{StaticResource MenuButtonStyle}"/>
-                <Button Content="Workflow Template" Command="{Binding ShowWorkflowCommand}" Style="{StaticResource MenuButtonStyle}"/>
-                <Button Content="Danh sách văn bản" Command="{Binding ShowDocumentListCommand}" Style="{StaticResource MenuButtonStyle}"/>
-            </StackPanel>
+                    <mah:HamburgerMenuIconItem Label="Loại tài liệu" Tag="DocumentType">
+                        <mah:HamburgerMenuIconItem.Icon>
+                            <iconPacks:PackIconMaterial Kind="FileDocument" Width="22" Height="22"/>
+                        </mah:HamburgerMenuIconItem.Icon>
+                    </mah:HamburgerMenuIconItem>
 
-            <!-- Content -->
-            <ContentControl Content="{Binding CurrentView}" />
-        </DockPanel>
+                    <mah:HamburgerMenuIconItem Label="Workflow" Tag="Workflow">
+                        <mah:HamburgerMenuIconItem.Icon>
+                            <iconPacks:PackIconMaterial Kind="Sitemap" Width="22" Height="22"/>
+                        </mah:HamburgerMenuIconItem.Icon>
+                    </mah:HamburgerMenuIconItem>
+
+                    <mah:HamburgerMenuIconItem Label="Văn bản" Tag="DocumentList">
+                        <mah:HamburgerMenuIconItem.Icon>
+                            <iconPacks:PackIconMaterial Kind="FileMultiple" Width="22" Height="22"/>
+                        </mah:HamburgerMenuIconItem.Icon>
+                    </mah:HamburgerMenuIconItem>
+                </mah:HamburgerMenuItemCollection>
+            </mah:HamburgerMenu.ItemsSource>
+
+            <!-- ✅ Phần nội dung chính -->
+            <mah:HamburgerMenu.Content>
+                <Border Background="{DynamicResource MahApps.Brushes.ThemeBackground}"
+                Padding="12"
+                Margin="0,8,0,8">
+                    <ContentControl Content="{Binding CurrentView}" />
+                </Border>
+            </mah:HamburgerMenu.Content>
+        </mah:HamburgerMenu>
     </Grid>
-</Window>
+</mah:MetroWindow>

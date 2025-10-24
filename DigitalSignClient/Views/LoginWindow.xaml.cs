@@ -17,15 +17,19 @@ namespace DigitalSignClient.Views
             InitializeComponent();
             _viewModel = viewModel;
             DataContext = _viewModel;
+
             // ✅ Đồng bộ password mặc định hiển thị trong UI
             PasswordBox.Password = _viewModel.Password;
             _viewModel.LoginSuccessful += OnLoginSuccessful;
         }
 
-        // THÊM EVENT HANDLER NÀY
+        // Event handler cho PasswordBox
         private void PasswordBox_PasswordChanged(object sender, RoutedEventArgs e)
         {
-            _viewModel.Password = PasswordBox.Password;
+            if (sender is PasswordBox passwordBox)
+            {
+                _viewModel.Password = passwordBox.Password;
+            }
         }
 
         private void OnLoginSuccessful(object? sender, LoginResponse e)
@@ -35,10 +39,14 @@ namespace DigitalSignClient.Views
             {
                 CurrentUser = e.User
             };
+
             var mainWindow = new MainWindow(mainViewModel);
 
             // Hiển thị MainWindow trước khi đóng LoginWindow
             mainWindow.Show();
+
+            // Hủy đăng ký event để tránh memory leak
+            _viewModel.LoginSuccessful -= OnLoginSuccessful;
 
             // Đóng LoginWindow
             this.Close();

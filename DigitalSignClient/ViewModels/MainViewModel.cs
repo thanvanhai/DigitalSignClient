@@ -49,20 +49,17 @@ namespace DigitalSignClient.ViewModels
 
         private void ShowDashboard()
         {
-            // TODO: Tạo DashboardView
-            CurrentView = null;
+            CurrentView = new DashboardView();
         }
 
         private void ShowDocumentType()
         {
-            // TODO: Tạo DocumentTypeView
-            CurrentView = null;
+            CurrentView = new DocumentTypeView();
         }
 
         private void ShowWorkflow()
         {
-            // TODO: Tạo WorkflowView
-            CurrentView = null;
+            CurrentView = new WorkflowTemplateView();
         }
 
         private void ShowDocumentList()
