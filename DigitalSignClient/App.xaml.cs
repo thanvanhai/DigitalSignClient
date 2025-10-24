@@ -9,7 +9,7 @@ namespace DigitalSignClient
 {
     public partial class App : Application
     {
-        private ServiceProvider? _serviceProvider;
+        public static IServiceProvider ServiceProvider { get; private set; } = null!;
 
         protected override void OnStartup(StartupEventArgs e)
         {
@@ -17,28 +17,31 @@ namespace DigitalSignClient
 
             var services = new ServiceCollection();
 
-            // Services
-            services.AddSingleton<ApiService>();
+            // 🔹 Đăng ký tất cả API Services
+            services.AddApiServices();
 
-            // ViewModels
+            // 🔹 Đăng ký ViewModels
             services.AddTransient<LoginViewModel>();
             services.AddTransient<MainViewModel>();
             services.AddTransient<DocumentListViewModel>();
+            services.AddTransient<DocumentTypeViewModel>();
 
-            // Views
+            // 🔹 Đăng ký Views
             services.AddTransient<LoginWindow>();
             services.AddTransient<MainWindow>();
 
-            _serviceProvider = services.BuildServiceProvider();
+            ServiceProvider = services.BuildServiceProvider();
 
-            // Show login window
-            var loginWindow = _serviceProvider.GetRequiredService<LoginWindow>();
+            // 🔹 Mở cửa sổ đăng nhập
+            var loginWindow = ServiceProvider.GetRequiredService<LoginWindow>();
             loginWindow.Show();
         }
 
         protected override void OnExit(ExitEventArgs e)
         {
-            _serviceProvider?.Dispose();
+            if (ServiceProvider is IDisposable disposable)
+                disposable.Dispose();
+
             base.OnExit(e);
         }
     }

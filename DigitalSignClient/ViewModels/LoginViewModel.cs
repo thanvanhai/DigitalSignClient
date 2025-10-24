@@ -1,25 +1,29 @@
 ﻿using DigitalSignClient.Helpers;
 using DigitalSignClient.Models;
-using DigitalSignClient.Services;
-using System.Net.Http;
+using DigitalSignClient.Services.Interfaces;
+using System;
+using System.Threading.Tasks;
 using System.Windows.Input;
 
 namespace DigitalSignClient.ViewModels
 {
     public class LoginViewModel : BaseViewModel
     {
-        private readonly ApiService _apiService;
+        private readonly IAuthService _authService;
+
         private string _username = string.Empty;
         private string _password = string.Empty;
         private string _errorMessage = string.Empty;
         private bool _isLoading;
-        public ApiService ApiService => _apiService;
-        public LoginViewModel(ApiService apiService)
+
+        public LoginViewModel(IAuthService authService)
         {
-            _apiService = apiService;
-            // ✅ Giá trị mặc định
+            _authService = authService;
+
+            // ✅ Giá trị mặc định (demo)
             Username = "admin";
             Password = "Admin@123";
+
             LoginCommand = new RelayCommand(async _ => await LoginAsync(), _ => CanLogin());
         }
 
@@ -71,20 +75,20 @@ namespace DigitalSignClient.ViewModels
                     Password = Password
                 };
 
-                var response = await _apiService.LoginAsync(request);
+                var response = await _authService.LoginAsync(request);
 
                 if (response != null)
                 {
+                    // ✅ Token đã được lưu vào ApiManager bên trong AuthService
                     LoginSuccessful?.Invoke(this, response);
                 }
                 else
                 {
-                    ErrorMessage = "Đăng nhập thất bại. Kiểm tra lại tên đăng nhập và mật khẩu.";
+                    ErrorMessage = "Đăng nhập thất bại. Vui lòng kiểm tra lại tên đăng nhập và mật khẩu.";
                 }
             }
             catch (Exception ex)
             {
-                // ✅ Dùng thông báo thân thiện nếu có
                 ErrorMessage = ex.Message switch
                 {
                     string msg when msg.Contains("máy chủ") => msg,

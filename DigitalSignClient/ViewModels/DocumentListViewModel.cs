@@ -1,9 +1,11 @@
 ﻿using DigitalSignClient.Helpers;
 using DigitalSignClient.Models;
-using DigitalSignClient.Services;
+using DigitalSignClient.Services.Interfaces;
 using Microsoft.Win32;
+using System;
 using System.Collections.ObjectModel;
 using System.IO;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 
@@ -11,14 +13,14 @@ namespace DigitalSignClient.ViewModels
 {
     public class DocumentListViewModel : BaseViewModel
     {
-        private readonly ApiService _apiService;
+        private readonly IDocumentService _documentService;
         private User? _currentUser;
         private Document? _selectedDocument;
         private bool _isLoading;
 
-        public DocumentListViewModel(ApiService apiService)
+        public DocumentListViewModel(IDocumentService documentService)
         {
-            _apiService = apiService;
+            _documentService = documentService;
             Documents = new ObservableCollection<Document>();
 
             UploadCommand = new DelegateCommand<object>(async _ => await UploadDocumentAsync());
@@ -54,20 +56,19 @@ namespace DigitalSignClient.ViewModels
         public ICommand DownloadCommand { get; }
         public ICommand DeleteCommand { get; }
 
+        // 📄 Load danh sách tài liệu
         public async Task LoadDocumentsAsync()
         {
             try
             {
                 IsLoading = true;
-                var documents = await _apiService.GetDocumentsAsync();
+                var documents = await _documentService.GetDocumentsAsync();
 
+                Documents.Clear();
                 if (documents != null)
                 {
-                    Documents.Clear();
                     foreach (var doc in documents)
-                    {
                         Documents.Add(doc);
-                    }
                 }
             }
             catch (Exception ex)
@@ -81,6 +82,7 @@ namespace DigitalSignClient.ViewModels
             }
         }
 
+        // ⬆ Upload tài liệu mới
         private async Task UploadDocumentAsync()
         {
             try
@@ -94,7 +96,7 @@ namespace DigitalSignClient.ViewModels
                 if (dialog.ShowDialog() == true)
                 {
                     IsLoading = true;
-                    var document = await _apiService.UploadDocumentAsync(dialog.FileName, null);
+                    var document = await _documentService.UploadDocumentAsync(dialog.FileName, null);
 
                     if (document != null)
                     {
@@ -120,16 +122,17 @@ namespace DigitalSignClient.ViewModels
             }
         }
 
+        // ✍ Ký tài liệu
         private async Task SignDocumentAsync()
         {
             if (SelectedDocument == null) return;
 
             try
             {
-                // 1️⃣ Download file PDF tạm để hiển thị
                 IsLoading = true;
+
                 var tempPath = Path.Combine(Path.GetTempPath(), SelectedDocument.OriginalFileName);
-                var fileData = await _apiService.DownloadDocumentAsync(SelectedDocument.Id);
+                var fileData = await _documentService.DownloadDocumentAsync(SelectedDocument.Id);
 
                 if (fileData == null)
                 {
@@ -140,12 +143,12 @@ namespace DigitalSignClient.ViewModels
 
                 await File.WriteAllBytesAsync(tempPath, fileData);
 
-                // 2️⃣ Mở cửa sổ ký
-                var signWindow = new Views.SignDocumentWindow(tempPath, SelectedDocument.Id);
-                signWindow.Owner = Application.Current.MainWindow;
+                var signWindow = new Views.SignDocumentWindow(tempPath, SelectedDocument.Id)
+                {
+                    Owner = Application.Current.MainWindow
+                };
                 signWindow.ShowDialog();
 
-                // 3️⃣ Sau khi ký xong thì tải lại danh sách
                 await LoadDocumentsAsync();
             }
             catch (Exception ex)
@@ -159,6 +162,7 @@ namespace DigitalSignClient.ViewModels
             }
         }
 
+        // ⬇ Tải file PDF
         private async Task DownloadDocumentAsync()
         {
             if (SelectedDocument == null) return;
@@ -174,7 +178,7 @@ namespace DigitalSignClient.ViewModels
                 if (dialog.ShowDialog() == true)
                 {
                     IsLoading = true;
-                    var fileData = await _apiService.DownloadDocumentAsync(SelectedDocument.Id);
+                    var fileData = await _documentService.DownloadDocumentAsync(SelectedDocument.Id);
 
                     if (fileData != null)
                     {
@@ -200,6 +204,7 @@ namespace DigitalSignClient.ViewModels
             }
         }
 
+        // 🗑 Xóa tài liệu
         private async Task DeleteDocumentAsync()
         {
             if (SelectedDocument == null) return;
@@ -215,7 +220,7 @@ namespace DigitalSignClient.ViewModels
                 if (result == MessageBoxResult.Yes)
                 {
                     IsLoading = true;
-                    var success = await _apiService.DeleteDocumentAsync(SelectedDocument.Id);
+                    var success = await _documentService.DeleteDocumentAsync(SelectedDocument.Id);
 
                     if (success)
                     {

@@ -8,6 +8,7 @@ namespace DigitalSignClient.Views
     {
         private readonly DocumentListViewModel _viewModel;
 
+        // Constructor nhận ViewModel qua DI
         public DocumentListView(DocumentListViewModel viewModel)
         {
             InitializeComponent();
@@ -16,8 +17,8 @@ namespace DigitalSignClient.Views
             Loaded += DocumentListView_Loaded;
         }
 
-        // Constructor không tham số cho designer
-        public DocumentListView() : this(new DocumentListViewModel(new Services.ApiService()))
+        // ✅ Constructor cho Designer hoặc nếu mở view trực tiếp (Design-time)
+        public DocumentListView()
         {
         }
 
