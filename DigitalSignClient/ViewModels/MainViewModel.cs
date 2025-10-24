@@ -1,8 +1,7 @@
-﻿using DigitalSignClient.Models;
+﻿using DigitalSignClient.Helpers;
+using DigitalSignClient.Models;
 using DigitalSignClient.Services;
-using Microsoft.Win32;
-using System.Collections.ObjectModel;
-using System.IO;
+using DigitalSignClient.Views;
 using System.Windows;
 using System.Windows.Input;
 
@@ -11,20 +10,21 @@ namespace DigitalSignClient.ViewModels
     public class MainViewModel : BaseViewModel
     {
         private readonly ApiService _apiService;
+        private object? _currentView;
         private User? _currentUser;
-        private Document? _selectedDocument;
-        private bool _isLoading;
 
         public MainViewModel(ApiService apiService)
         {
             _apiService = apiService;
-            Documents = new ObservableCollection<Document>();
 
-            UploadCommand = new RelayCommand(async _ => await UploadDocumentAsync());
-            RefreshCommand = new RelayCommand(async _ => await LoadDocumentsAsync());
-            SignCommand = new RelayCommand(async _ => await SignDocumentAsync(), _ => SelectedDocument != null);
-            DownloadCommand = new RelayCommand(async _ => await DownloadDocumentAsync(), _ => SelectedDocument != null);
-            DeleteCommand = new RelayCommand(async _ => await DeleteDocumentAsync(), _ => SelectedDocument != null);
+            ShowDashboardCommand = new DelegateCommand<object>(_ => ShowDashboard());
+            ShowDocumentTypeCommand = new DelegateCommand<object>(_ => ShowDocumentType());
+            ShowWorkflowCommand = new DelegateCommand<object>(_ => ShowWorkflow());
+            ShowDocumentListCommand = new DelegateCommand<object>(_ => ShowDocumentList());
+            LogoutCommand = new DelegateCommand<object>(_ => Logout());
+
+            // Hiển thị Dashboard mặc định
+            ShowDashboard();
         }
 
         public User? CurrentUser
@@ -33,209 +33,71 @@ namespace DigitalSignClient.ViewModels
             set => SetProperty(ref _currentUser, value);
         }
 
-        public ObservableCollection<Document> Documents { get; }
-
-        public Document? SelectedDocument
+        public object? CurrentView
         {
-            get => _selectedDocument;
-            set => SetProperty(ref _selectedDocument, value);
+            get => _currentView;
+            set => SetProperty(ref _currentView, value);
         }
 
-        public bool IsLoading
+        public ApiService ApiService => _apiService;
+
+        public ICommand ShowDashboardCommand { get; }
+        public ICommand ShowDocumentTypeCommand { get; }
+        public ICommand ShowWorkflowCommand { get; }
+        public ICommand ShowDocumentListCommand { get; }
+        public ICommand LogoutCommand { get; }
+
+        private void ShowDashboard()
         {
-            get => _isLoading;
-            set => SetProperty(ref _isLoading, value);
+            // TODO: Tạo DashboardView
+            CurrentView = null;
         }
 
-        public ICommand UploadCommand { get; }
-        public ICommand RefreshCommand { get; }
-        public ICommand SignCommand { get; }
-        public ICommand DownloadCommand { get; }
-        public ICommand DeleteCommand { get; }
-
-        public async Task LoadDocumentsAsync()
+        private void ShowDocumentType()
         {
-            try
+            // TODO: Tạo DocumentTypeView
+            CurrentView = null;
+        }
+
+        private void ShowWorkflow()
+        {
+            // TODO: Tạo WorkflowView
+            CurrentView = null;
+        }
+
+        private void ShowDocumentList()
+        {
+            var viewModel = new DocumentListViewModel(_apiService)
             {
-                IsLoading = true;
-                var documents = await _apiService.GetDocumentsAsync();
+                CurrentUser = this.CurrentUser
+            };
+            CurrentView = new DocumentListView(viewModel);
+        }
 
-                if (documents != null)
+        private void Logout()
+        {
+            var result = MessageBox.Show(
+                "Bạn có chắc muốn đăng xuất?",
+                "Xác nhận",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Question);
+
+            if (result == MessageBoxResult.Yes)
+            {
+                // Tìm và đóng MainWindow
+                foreach (Window window in Application.Current.Windows)
                 {
-                    Documents.Clear();
-                    foreach (var doc in documents)
+                    if (window is MainWindow)
                     {
-                        Documents.Add(doc);
+                        // Mở LoginWindow
+                        var loginViewModel = new LoginViewModel(_apiService);
+                        var loginWindow = new LoginWindow(loginViewModel);
+                        loginWindow.Show();
+
+                        window.Close();
+                        break;
                     }
                 }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Lỗi khi tải danh sách: {ex.Message}", "Lỗi",
-                    MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-            finally
-            {
-                IsLoading = false;
-            }
-        }
-
-        private async Task UploadDocumentAsync()
-        {
-            try
-            {
-                var dialog = new OpenFileDialog
-                {
-                    Filter = "PDF Files (*.pdf)|*.pdf",
-                    Title = "Chọn file PDF để upload"
-                };
-
-                if (dialog.ShowDialog() == true)
-                {
-                    IsLoading = true;
-                    var document = await _apiService.UploadDocumentAsync(dialog.FileName, null);
-
-                    if (document != null)
-                    {
-                        Documents.Add(document);
-                        MessageBox.Show("Upload thành công!", "Thông báo",
-                            MessageBoxButton.OK, MessageBoxImage.Information);
-                    }
-                    else
-                    {
-                        MessageBox.Show("Upload thất bại!", "Lỗi",
-                            MessageBoxButton.OK, MessageBoxImage.Error);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Lỗi: {ex.Message}", "Lỗi",
-                    MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-            finally
-            {
-                IsLoading = false;
-            }
-        }
-
-        private async Task SignDocumentAsync()
-        {
-            if (SelectedDocument == null) return;
-
-            try
-            {
-                // 1️⃣ Download file PDF tạm để hiển thị
-                IsLoading = true;
-                var tempPath = Path.Combine(Path.GetTempPath(), SelectedDocument.OriginalFileName);
-                var fileData = await _apiService.DownloadDocumentAsync(SelectedDocument.Id);
-                if (fileData == null)
-                {
-                    MessageBox.Show("Không thể tải file để ký.", "Lỗi",
-                        MessageBoxButton.OK, MessageBoxImage.Error);
-                    return;
-                }
-
-                await File.WriteAllBytesAsync(tempPath, fileData);
-
-                // 2️⃣ Mở cửa sổ ký
-                var signWindow = new Views.SignDocumentWindow(tempPath, SelectedDocument.Id);
-                signWindow.Owner = Application.Current.MainWindow;
-                signWindow.ShowDialog();
-
-                // 3️⃣ Sau khi ký xong thì tải lại danh sách
-                await LoadDocumentsAsync();
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Lỗi: {ex.Message}", "Lỗi",
-                    MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-            finally
-            {
-                IsLoading = false;
-            }
-        }
-
-        private async Task DownloadDocumentAsync()
-        {
-            if (SelectedDocument == null) return;
-
-            try
-            {
-                var dialog = new SaveFileDialog
-                {
-                    FileName = SelectedDocument.OriginalFileName,
-                    Filter = "PDF Files (*.pdf)|*.pdf"
-                };
-
-                if (dialog.ShowDialog() == true)
-                {
-                    IsLoading = true;
-                    var fileData = await _apiService.DownloadDocumentAsync(SelectedDocument.Id);
-
-                    if (fileData != null)
-                    {
-                        await File.WriteAllBytesAsync(dialog.FileName, fileData);
-                        MessageBox.Show("Download thành công!", "Thông báo",
-                            MessageBoxButton.OK, MessageBoxImage.Information);
-                    }
-                    else
-                    {
-                        MessageBox.Show("Download thất bại!", "Lỗi",
-                            MessageBoxButton.OK, MessageBoxImage.Error);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Lỗi: {ex.Message}", "Lỗi",
-                    MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-            finally
-            {
-                IsLoading = false;
-            }
-        }
-
-        private async Task DeleteDocumentAsync()
-        {
-            if (SelectedDocument == null) return;
-
-            try
-            {
-                var result = MessageBox.Show(
-                    $"Bạn có chắc muốn xóa '{SelectedDocument.OriginalFileName}'?",
-                    "Xác nhận xóa",
-                    MessageBoxButton.YesNo,
-                    MessageBoxImage.Warning);
-
-                if (result == MessageBoxResult.Yes)
-                {
-                    IsLoading = true;
-                    var success = await _apiService.DeleteDocumentAsync(SelectedDocument.Id);
-
-                    if (success)
-                    {
-                        Documents.Remove(SelectedDocument);
-                        MessageBox.Show("Xóa thành công!", "Thông báo",
-                            MessageBoxButton.OK, MessageBoxImage.Information);
-                    }
-                    else
-                    {
-                        MessageBox.Show("Xóa thất bại!", "Lỗi",
-                            MessageBoxButton.OK, MessageBoxImage.Error);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Lỗi: {ex.Message}", "Lỗi",
-                    MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-            finally
-            {
-                IsLoading = false;
             }
         }
     }

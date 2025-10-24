@@ -1,5 +1,4 @@
-﻿// App.xaml.cs
-using DigitalSignClient.Services;
+﻿using DigitalSignClient.Services;
 using DigitalSignClient.ViewModels;
 using DigitalSignClient.Views;
 using Microsoft.Extensions.DependencyInjection;
@@ -16,27 +15,25 @@ namespace DigitalSignClient
         {
             base.OnStartup(e);
 
-            // Configure services
             var services = new ServiceCollection();
-            ConfigureServices(services);
+
+            // Services
+            services.AddSingleton<ApiService>();
+
+            // ViewModels
+            services.AddTransient<LoginViewModel>();
+            services.AddTransient<MainViewModel>();
+            services.AddTransient<DocumentListViewModel>();
+
+            // Views
+            services.AddTransient<LoginWindow>();
+            services.AddTransient<MainWindow>();
+
             _serviceProvider = services.BuildServiceProvider();
 
             // Show login window
             var loginWindow = _serviceProvider.GetRequiredService<LoginWindow>();
             loginWindow.Show();
-        }
-
-        private void ConfigureServices(IServiceCollection services)
-        {
-            // Services - Singleton để giữ token
-            services.AddSingleton<ApiService, ApiService>();
-
-            // ViewModels
-            services.AddTransient<LoginViewModel>();
-            services.AddTransient<MainViewModel>();
-
-            // Views
-            services.AddTransient<LoginWindow>();
         }
 
         protected override void OnExit(ExitEventArgs e)

@@ -1,4 +1,5 @@
-﻿using DigitalSignClient.Models;
+﻿using DigitalSignClient.Helpers;
+using DigitalSignClient.Models;
 using DigitalSignClient.Services;
 using System.Net.Http;
 using System.Windows.Input;

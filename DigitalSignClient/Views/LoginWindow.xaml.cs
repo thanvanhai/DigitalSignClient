@@ -35,10 +35,13 @@ namespace DigitalSignClient.Views
             {
                 CurrentUser = e.User
             };
-
             var mainWindow = new MainWindow(mainViewModel);
+
+            // Hiển thị MainWindow trước khi đóng LoginWindow
             mainWindow.Show();
-            Close();
+
+            // Đóng LoginWindow
+            this.Close();
         }
     }
 }

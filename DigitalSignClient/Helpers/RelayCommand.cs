@@ -1,6 +1,6 @@
 ﻿using System.Windows.Input;
 
-namespace DigitalSignClient.ViewModels
+namespace DigitalSignClient.Helpers
 {
     public class RelayCommand : ICommand
     {

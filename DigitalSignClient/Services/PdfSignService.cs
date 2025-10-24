@@ -1,96 +1,66 @@
 ﻿using System;
 using System.IO;
+using System.Windows.Ink;
 using iText.Kernel.Pdf;
-using iText.Layout;
-using iText.Layout.Element;
-using iText.IO.Image;
 using iText.Kernel.Geom;
+using iText.Kernel.Pdf.Canvas;
 
 namespace DigitalSignClient.Services
 {
     public class PdfSignService
     {
-        public void InsertSignature(string inputPdfPath, string outputPdfPath, string signatureImagePath, double x, double y)
+        public void InsertSignature(string inputPdfPath, string outputPdfPath, StrokeCollection strokes, double imgWidth, double imgHeight)
         {
-            try
+            if (!File.Exists(inputPdfPath))
+                throw new Exception("Không tìm thấy file PDF!");
+
+            using var reader = new PdfReader(inputPdfPath);
+            using var writer = new PdfWriter(outputPdfPath);
+            using var pdfDoc = new PdfDocument(reader, writer);
+
+            var page = pdfDoc.GetFirstPage();
+            var pageSize = page.GetPageSize();
+            var canvas = new PdfCanvas(page);
+
+            // Tính scale dựa trên kích thước thực tế
+            double scaleX = pageSize.GetWidth() / imgWidth;
+            double scaleY = pageSize.GetHeight() / imgHeight;
+
+            System.Diagnostics.Debug.WriteLine($"PDF size: {pageSize.GetWidth()}x{pageSize.GetHeight()}");
+            System.Diagnostics.Debug.WriteLine($"Canvas size: {imgWidth}x{imgHeight}");
+            System.Diagnostics.Debug.WriteLine($"Scale: X={scaleX:F4}, Y={scaleY:F4}");
+
+            foreach (var stroke in strokes)
             {
-                System.Diagnostics.Debug.WriteLine("=== INSERTING SIGNATURE ===");
-                System.Diagnostics.Debug.WriteLine($"Input PDF: {inputPdfPath}");
-                System.Diagnostics.Debug.WriteLine($"Output PDF: {outputPdfPath}");
-                System.Diagnostics.Debug.WriteLine($"Signature Image: {signatureImagePath}");
-                System.Diagnostics.Debug.WriteLine($"Position: X={x}, Y={y}");
+                var points = stroke.StylusPoints;
+                if (points.Count < 2)
+                    continue;
 
-                // Kiểm tra file tồn tại
-                if (!File.Exists(inputPdfPath))
+                var color = stroke.DrawingAttributes.Color;
+                canvas.SetStrokeColor(new iText.Kernel.Colors.DeviceRgb(color.R, color.G, color.B));
+                canvas.SetLineWidth((float)stroke.DrawingAttributes.Width * 0.75f); // Điều chỉnh độ dày
+
+                // Điểm đầu tiên
+                var first = points[0];
+                double startX = first.X * scaleX;
+                double startY = pageSize.GetHeight() - (first.Y * scaleY); // Đảo Y từ dưới lên
+
+                canvas.MoveTo((float)startX, (float)startY);
+
+                // Vẽ các điểm tiếp theo
+                for (int i = 1; i < points.Count; i++)
                 {
-                    throw new Exception($"File PDF không tồn tại: {inputPdfPath}");
+                    double x = points[i].X * scaleX;
+                    double y = pageSize.GetHeight() - (points[i].Y * scaleY); // Đảo Y từ dưới lên
+
+                    canvas.LineTo((float)x, (float)y);
                 }
 
-                if (!File.Exists(signatureImagePath))
-                {
-                    throw new Exception($"File chữ ký không tồn tại: {signatureImagePath}");
-                }
-
-                // Đọc PDF
-                using (var reader = new PdfReader(inputPdfPath))
-                using (var writer = new PdfWriter(outputPdfPath))
-                using (var pdfDoc = new PdfDocument(reader, writer))
-                {
-                    // Lấy trang đầu tiên
-                    var page = pdfDoc.GetFirstPage();
-                    var pageSize = page.GetPageSize();
-
-                    System.Diagnostics.Debug.WriteLine($"Page size: {pageSize.GetWidth()} x {pageSize.GetHeight()}");
-
-                    // Tạo document
-                    var document = new Document(pdfDoc);
-
-                    // Load ảnh chữ ký
-                    var imageData = ImageDataFactory.Create(signatureImagePath);
-                    var signatureImage = new Image(imageData);
-
-                    // Kích thước chữ ký (có thể điều chỉnh)
-                    float signatureWidth = 150f;
-                    float signatureHeight = 75f;
-                    signatureImage.ScaleToFit(signatureWidth, signatureHeight);
-
-                    // ✅ QUAN TRỌNG: Tọa độ PDF
-                    // - PDF: gốc tọa độ ở DƯỚI-TRÁI, Y tăng đi lên
-                    // - WPF: gốc tọa độ ở TRÊN-TRÁI, Y tăng đi xuống
-                    // => Phải đảo ngược trục Y
-
-                    float pdfX = (float)x;
-                    float pdfY = (float)(pageSize.GetHeight() - y - signatureHeight);
-
-                    System.Diagnostics.Debug.WriteLine($"PDF coordinates: X={pdfX}, Y={pdfY}");
-
-                    // Đặt vị trí chữ ký
-                    signatureImage.SetFixedPosition(1, pdfX, pdfY);
-
-                    // Thêm vào document
-                    document.Add(signatureImage);
-                    document.Close();
-
-                    System.Diagnostics.Debug.WriteLine("✅ Signature inserted successfully!");
-                }
-
-                // Kiểm tra file output
-                if (File.Exists(outputPdfPath))
-                {
-                    var fileInfo = new FileInfo(outputPdfPath);
-                    System.Diagnostics.Debug.WriteLine($"Output file created: {fileInfo.Length} bytes");
-                }
-                else
-                {
-                    throw new Exception("Output PDF was not created!");
-                }
+                canvas.Stroke();
             }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"❌ ERROR: {ex.Message}");
-                System.Diagnostics.Debug.WriteLine($"Stack trace: {ex.StackTrace}");
-                throw new Exception($"Lỗi khi chèn chữ ký: {ex.Message}", ex);
-            }
+
+            canvas.Release();
+            System.Diagnostics.Debug.WriteLine("✅ Chữ ký đã được chèn vào đúng vị trí!");
         }
     }
 }
