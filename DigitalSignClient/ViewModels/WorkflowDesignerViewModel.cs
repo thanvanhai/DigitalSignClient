@@ -15,9 +15,6 @@ namespace DigitalSignClient.ViewModels
         private ObservableCollection<WorkflowNodeViewModel> nodes = new();
 
         [ObservableProperty]
-        private ObservableCollection<WorkflowConnectionViewModel> connections = new();
-
-        [ObservableProperty]
         private string workflowName = "Workflow mới";
 
         [ObservableProperty]
@@ -29,15 +26,14 @@ namespace DigitalSignClient.ViewModels
         [ObservableProperty]
         private bool isLoading;
 
-        // Pending connection (khi user đang kéo connection)
-        [ObservableProperty]
-        private WorkflowNodeViewModel? pendingConnectionSource;
-
         public WorkflowDesignerViewModel(IWorkflowService workflowService)
         {
             _workflowService = workflowService;
         }
 
+        // ==============================
+        // THÊM NODE
+        // ==============================
         [RelayCommand]
         private void AddNode(string nodeType)
         {
@@ -45,7 +41,7 @@ namespace DigitalSignClient.ViewModels
             {
                 Id = Guid.NewGuid(),
                 NodeType = nodeType,
-                Location = new Point(100 + Nodes.Count * 50, 100 + Nodes.Count * 30),
+                Location = new Point(100 + Nodes.Count * 80, 100 + Nodes.Count * 50),
                 Level = Nodes.Count + 1
             };
 
@@ -66,11 +62,6 @@ namespace DigitalSignClient.ViewModels
                     newNode.Role = "Giám đốc";
                     newNode.SignatureType = "Chính";
                     break;
-                case "parallel":
-                    newNode.DisplayName = "Song song";
-                    newNode.Role = "Kế toán + Hành chính";
-                    newNode.SignatureType = "Nháy";
-                    break;
                 case "end":
                     newNode.DisplayName = "Kết thúc";
                     newNode.Role = "End";
@@ -86,84 +77,45 @@ namespace DigitalSignClient.ViewModels
             Nodes.Add(newNode);
         }
 
+        // ==============================
+        // XÓA NODE
+        // ==============================
         [RelayCommand]
         private void RemoveNode(WorkflowNodeViewModel node)
         {
             if (node == null) return;
-
-            // Xóa tất cả connections liên quan
-            var relatedConnections = Connections
-                .Where(c => c.Source == node || c.Target == node)
-                .ToList();
-
-            foreach (var conn in relatedConnections)
-            {
-                Connections.Remove(conn);
-            }
-
             Nodes.Remove(node);
+
+            // Cập nhật lại Level theo thứ tự
+            int i = 1;
+            foreach (var n in Nodes.OrderBy(n => n.Level))
+                n.Level = i++;
         }
 
-        [RelayCommand]
-        private void StartConnection(WorkflowNodeViewModel source)
-        {
-            PendingConnectionSource = source;
-        }
-
-        [RelayCommand]
-        private void CompleteConnection(WorkflowNodeViewModel target)
-        {
-            if (PendingConnectionSource == null || PendingConnectionSource == target)
-            {
-                PendingConnectionSource = null;
-                return;
-            }
-
-            // Kiểm tra đã có connection này chưa
-            var existingConnection = Connections.FirstOrDefault(c =>
-                c.Source == PendingConnectionSource && c.Target == target);
-
-            if (existingConnection == null)
-            {
-                var newConnection = new WorkflowConnectionViewModel(PendingConnectionSource, target)
-                {
-                    Condition = "auto",
-                    Label = $"{PendingConnectionSource.DisplayName} → {target.DisplayName}"
-                };
-
-                Connections.Add(newConnection);
-            }
-
-            PendingConnectionSource = null;
-        }
-
-        [RelayCommand]
-        private void RemoveConnection(WorkflowConnectionViewModel connection)
-        {
-            if (connection != null)
-            {
-                Connections.Remove(connection);
-            }
-        }
-
+        // ==============================
+        // LƯU WORKFLOW
+        // ==============================
         [RelayCommand]
         private async Task SaveWorkflow()
         {
             if (string.IsNullOrWhiteSpace(WorkflowName))
             {
-                MessageBox.Show("Vui lòng nhập tên workflow!", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Warning);
+                MessageBox.Show("Vui lòng nhập tên workflow!", "Lỗi",
+                    MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
             if (SelectedDocumentTypeId == Guid.Empty)
             {
-                MessageBox.Show("Vui lòng chọn loại văn bản!", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Warning);
+                MessageBox.Show("Vui lòng chọn loại văn bản!", "Lỗi",
+                    MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
             if (!Nodes.Any())
             {
-                MessageBox.Show("Workflow phải có ít nhất 1 bước!", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Warning);
+                MessageBox.Show("Workflow phải có ít nhất 1 bước!", "Lỗi",
+                    MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
@@ -184,14 +136,6 @@ namespace DigitalSignClient.ViewModels
                         PositionX = n.Location.X,
                         PositionY = n.Location.Y,
                         NodeType = n.NodeType
-                    }).ToList(),
-                    Connections = Connections.Select(c => new WorkflowConnectionCreateDto
-                    {
-                        SourceStepId = c.Source.Id,
-                        TargetStepId = c.Target.Id,
-                        Condition = c.Condition,
-                        Priority = c.Priority,
-                        Label = c.Label
                     }).ToList()
                 };
 
@@ -220,6 +164,9 @@ namespace DigitalSignClient.ViewModels
             }
         }
 
+        // ==============================
+        // TẢI WORKFLOW
+        // ==============================
         [RelayCommand]
         private async Task LoadWorkflow(Guid workflowId)
         {
@@ -228,7 +175,6 @@ namespace DigitalSignClient.ViewModels
             try
             {
                 var workflow = await _workflowService.GetByIdAsync(workflowId);
-
                 if (workflow == null)
                 {
                     MessageBox.Show("Không tìm thấy workflow!", "Lỗi",
@@ -236,18 +182,13 @@ namespace DigitalSignClient.ViewModels
                     return;
                 }
 
-                // Clear current data
                 Nodes.Clear();
-                Connections.Clear();
 
-                // Load basic info
                 CurrentWorkflowId = workflow.Id;
                 WorkflowName = workflow.Name;
                 SelectedDocumentTypeId = workflow.DocumentTypeId;
 
-                // Load nodes
-                var nodeMap = new Dictionary<Guid, WorkflowNodeViewModel>();
-                foreach (var step in workflow.Steps)
+                foreach (var step in workflow.Steps.OrderBy(s => s.Level))
                 {
                     var node = new WorkflowNodeViewModel
                     {
@@ -262,27 +203,6 @@ namespace DigitalSignClient.ViewModels
                     };
 
                     Nodes.Add(node);
-                    nodeMap[step.Id] = node;
-                }
-
-                // Load connections
-                foreach (var conn in workflow.Connections)
-                {
-                    if (nodeMap.TryGetValue(conn.SourceStepId, out var sourceNode) &&
-                        nodeMap.TryGetValue(conn.TargetStepId, out var targetNode))
-                    {
-                        var connection = new WorkflowConnectionViewModel
-                        {
-                            Id = conn.Id,
-                            Source = sourceNode,
-                            Target = targetNode,
-                            Condition = conn.Condition,
-                            Priority = conn.Priority,
-                            Label = conn.Label
-                        };
-
-                        Connections.Add(connection);
-                    }
                 }
 
                 MessageBox.Show("✅ Tải workflow thành công!", "Thành công",
@@ -299,21 +219,9 @@ namespace DigitalSignClient.ViewModels
             }
         }
 
-        [RelayCommand]
-        private void NewWorkflow()
-        {
-            var result = MessageBox.Show("Tạo workflow mới? Dữ liệu hiện tại sẽ bị xóa.",
-                "Xác nhận", MessageBoxButton.YesNo, MessageBoxImage.Question);
-
-            if (result == MessageBoxResult.Yes)
-            {
-                Nodes.Clear();
-                Connections.Clear();
-                CurrentWorkflowId = null;
-                WorkflowName = "Workflow mới";
-            }
-        }
-
+        // ==============================
+        // KIỂM TRA HỢP LỆ
+        // ==============================
         [RelayCommand]
         private async Task ValidateWorkflow()
         {
@@ -353,90 +261,41 @@ namespace DigitalSignClient.ViewModels
             }
         }
 
+        // ==============================
+        // TẠO WORKFLOW MỚI
+        // ==============================
+        [RelayCommand]
+        private void NewWorkflow()
+        {
+            var result = MessageBox.Show("Tạo workflow mới? Dữ liệu hiện tại sẽ bị xóa.",
+                "Xác nhận", MessageBoxButton.YesNo, MessageBoxImage.Question);
+
+            if (result == MessageBoxResult.Yes)
+            {
+                Nodes.Clear();
+                CurrentWorkflowId = null;
+                WorkflowName = "Workflow mới";
+            }
+        }
+
+        // ==============================
+        // SẮP XẾP NODE TỰ ĐỘNG THEO LEVEL
+        // ==============================
         [RelayCommand]
         private void AutoLayout()
         {
             if (!Nodes.Any()) return;
 
-            // Thuật toán Layered Layout đơn giản
-            // 1. Tìm start node
-            var startNodes = Nodes.Where(n => n.NodeType == "start").ToList();
-            if (!startNodes.Any())
-            {
-                MessageBox.Show("Không tìm thấy node Start!", "Lỗi",
-                    MessageBoxButton.OK, MessageBoxImage.Warning);
-                return;
-            }
-
-            var layers = new List<List<WorkflowNodeViewModel>>();
-            var visited = new HashSet<Guid>();
-            var nodeLayer = new Dictionary<Guid, int>();
-
-            // BFS để tính layer
-            var queue = new Queue<(WorkflowNodeViewModel node, int layer)>();
-            foreach (var startNode in startNodes)
-            {
-                queue.Enqueue((startNode, 0));
-                visited.Add(startNode.Id);
-            }
-
-            while (queue.Count > 0)
-            {
-                var (currentNode, layer) = queue.Dequeue();
-                nodeLayer[currentNode.Id] = layer;
-
-                // Tìm các node tiếp theo
-                var outgoingConnections = Connections.Where(c => c.Source == currentNode);
-                foreach (var conn in outgoingConnections)
-                {
-                    if (!visited.Contains(conn.Target.Id))
-                    {
-                        visited.Add(conn.Target.Id);
-                        queue.Enqueue((conn.Target, layer + 1));
-                    }
-                }
-            }
-
-            // Group nodes by layer
-            var maxLayer = nodeLayer.Values.Any() ? nodeLayer.Values.Max() : 0;
-            for (int i = 0; i <= maxLayer; i++)
-            {
-                layers.Add(new List<WorkflowNodeViewModel>());
-            }
-
-            foreach (var node in Nodes)
-            {
-                if (nodeLayer.TryGetValue(node.Id, out var layer))
-                {
-                    layers[layer].Add(node);
-                }
-                else
-                {
-                    // Node không kết nối, đặt ở layer cuối
-                    layers[maxLayer].Add(node);
-                }
-            }
-
-            // Arrange nodes
-            double horizontalSpacing = 250;
-            double verticalSpacing = 150;
             double startX = 100;
             double startY = 100;
+            double verticalSpacing = 150;
 
-            for (int layerIndex = 0; layerIndex < layers.Count; layerIndex++)
+            foreach (var node in Nodes.OrderBy(n => n.Level))
             {
-                var layer = layers[layerIndex];
-                double layerY = startY + (layerIndex * verticalSpacing);
-
-                for (int nodeIndex = 0; nodeIndex < layer.Count; nodeIndex++)
-                {
-                    var node = layer[nodeIndex];
-                    double nodeX = startX + (nodeIndex * horizontalSpacing);
-                    node.Location = new Point(nodeX, layerY);
-                }
+                node.Location = new Point(startX, startY + (node.Level - 1) * verticalSpacing);
             }
 
-            MessageBox.Show("✅ Đã sắp xếp lại layout!", "Thành công",
+            MessageBox.Show("✅ Đã sắp xếp lại layout theo thứ tự level!", "Thành công",
                 MessageBoxButton.OK, MessageBoxImage.Information);
         }
     }

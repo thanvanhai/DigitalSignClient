@@ -16,7 +16,7 @@ namespace DigitalSignClient.Models
         public Guid DocumentTypeId { get; set; }
         public string? DocumentTypeName { get; set; }
         public List<WorkflowStepDto> Steps { get; set; } = new();
-        public List<WorkflowConnectionDto> Connections { get; set; } = new();
+      
         public bool IsActive { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }
@@ -30,6 +30,6 @@ namespace DigitalSignClient.Models
         public string Name { get; set; } = string.Empty;
         public Guid DocumentTypeId { get; set; }
         public List<WorkflowStepCreateDto> Steps { get; set; } = new();
-        public List<WorkflowConnectionCreateDto> Connections { get; set; } = new();
+       
     }
 }

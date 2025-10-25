@@ -37,6 +37,13 @@ namespace DigitalSignClient.Services
                 client.DefaultRequestHeaders.Accept.Add(
                     new MediaTypeWithQualityHeaderValue("application/json"));
             }).AddHttpMessageHandler<AuthTokenHandler>();
+            // WorkflowService (có token)
+            services.AddHttpClient<IWorkflowService, WorkflowService>(client =>
+            {
+                client.BaseAddress = new Uri("https://localhost:7159/api/");
+                client.DefaultRequestHeaders.Accept.Add(
+                    new MediaTypeWithQualityHeaderValue("application/json"));
+            }).AddHttpMessageHandler<AuthTokenHandler>();
         }
     }
 }

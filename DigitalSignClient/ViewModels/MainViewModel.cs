@@ -14,6 +14,7 @@ namespace DigitalSignClient.ViewModels
         private readonly IDocumentTypeService _documentTypeService;
         private readonly IAuthService _authService;
         private readonly IServiceProvider _serviceProvider;
+        private readonly IWorkflowService _workflowService;
 
         private object? _currentView;
         private User? _currentUser;
@@ -22,12 +23,14 @@ namespace DigitalSignClient.ViewModels
             IAuthService authService,
             IDocumentService documentService,
             IDocumentTypeService documentTypeService,
-            IServiceProvider serviceProvider)
+            IServiceProvider serviceProvider,
+            IWorkflowService workflowService)
         {
             _authService = authService;
             _documentService = documentService;
             _documentTypeService = documentTypeService;
             _serviceProvider = serviceProvider;
+            _workflowService = workflowService;
 
             ShowDashboardCommand = new DelegateCommand<object>(_ => ShowDashboard());
             ShowDocumentTypeCommand = new DelegateCommand<object>(_ => ShowDocumentType());
@@ -37,6 +40,7 @@ namespace DigitalSignClient.ViewModels
 
             // Mở dashboard mặc định
             ShowDashboard();
+            _workflowService = workflowService;
         }
 
         public User? CurrentUser
@@ -70,7 +74,8 @@ namespace DigitalSignClient.ViewModels
 
         private void ShowWorkflow()
         {
-            CurrentView = new WorkflowDesignerView();
+            var viewModel = _serviceProvider.GetRequiredService<WorkflowDesignerViewModel>();
+            CurrentView = new WorkflowDesignerView(viewModel);
         }
 
         private void ShowDocumentList()
