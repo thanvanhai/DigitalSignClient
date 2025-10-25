@@ -1,7 +1,7 @@
 ﻿using DigitalSignClient.Models;
 using System.Windows;
 
-namespace DigitalSignClient.Views
+namespace DigitalSignClient.Views.Dialogs
 {
     public partial class DocumentTypeDialog : Window
     {

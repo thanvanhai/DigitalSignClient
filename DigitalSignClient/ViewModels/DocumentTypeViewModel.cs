@@ -2,7 +2,7 @@
 using CommunityToolkit.Mvvm.Input;
 using DigitalSignClient.Models;
 using DigitalSignClient.Services.Interfaces;
-using DigitalSignClient.Views;
+using DigitalSignClient.Views.Dialogs;
 using System.Collections.ObjectModel;
 using System.Windows;
 using static iText.StyledXmlParser.Jsoup.Select.Evaluator;

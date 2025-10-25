@@ -26,7 +26,7 @@ namespace DigitalSignClient.Services.Implementations
             return JsonConvert.DeserializeObject<List<Document>>(content);
         }
 
-        public async Task<Document?> UploadDocumentAsync(string filePath, string? description)
+        public async Task<Document?> UploadDocumentAsync(string filePath, string? description, Guid documentTypeId)
         {
             using var form = new MultipartFormDataContent();
 
@@ -37,7 +37,12 @@ namespace DigitalSignClient.Services.Implementations
             if (!string.IsNullOrEmpty(description))
                 form.Add(new StringContent(description), "description");
 
-            var response = await _httpClient.PostAsync("Documents/upload", form);
+            // Thêm documentTypeId
+            form.Add(new StringContent(documentTypeId.ToString()), "documentTypeId");
+
+            var response = await _httpClient.PostAsync("Documents/upload", form);//truyền dữ liệu qua body thay vì string
+            //var response = await _httpClient.PostAsync($"Documents/upload?documentTypeId={documentTypeId}",form);//truyền dữ liệu qua query string thay vì body
+
             if (!response.IsSuccessStatusCode) return null;
 
             var content = await response.Content.ReadAsStringAsync();

@@ -9,6 +9,8 @@ namespace DigitalSignClient.Models
     public class Document
     {
         public Guid Id { get; set; }
+        // Document Type
+        public Guid DocumentTypeId { get; set; }
         public string FileName { get; set; } = string.Empty;
         public string OriginalFileName { get; set; } = string.Empty;
         public long FileSize { get; set; }
@@ -19,5 +21,10 @@ namespace DigitalSignClient.Models
         public string? Description { get; set; }
         public string UploadedByUsername { get; set; } = string.Empty;
         public int SignatureCount { get; set; }
+        // ✅ Thuộc tính con (nested object)
+        public DocumentType? DocumentType { get; set; }
+
+        // ✅ Có thể thêm property phụ cho hiển thị WPF
+        public string DocumentTypeName => DocumentType?.Name ?? "(Không rõ)";
     }
 }

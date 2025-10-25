@@ -8,7 +8,34 @@
         <converters:NullToVisibilityConverter x:Key="NullToVisibilityConverter"/>
 
         <Style x:Key="ModernButton" TargetType="Button">
-            <!-- ... giữ nguyên ... -->
+            <Setter Property="Height" Value="40"/>
+            <Setter Property="Padding" Value="15,0"/>
+            <Setter Property="Margin" Value="5,0"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="5"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" 
+                                            VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Opacity" Value="0.9"/>
+                </Trigger>
+                <Trigger Property="IsEnabled" Value="False">
+                    <Setter Property="Opacity" Value="0.6"/>
+                </Trigger>
+            </Style.Triggers>
         </Style>
     </UserControl.Resources>
 
@@ -95,15 +122,18 @@
                             <DataGridTextColumn Header="Tên file" 
                                               Binding="{Binding OriginalFileName}" 
                                               Width="*"/>
+                            <DataGridTextColumn Header="Loại tài liệu" 
+                                              Binding="{Binding DocumentTypeName, TargetNullValue=(Không rõ)}"
+                                              Width="130"/>
                             <DataGridTextColumn Header="Kích thước" 
                                               Binding="{Binding FileSize, StringFormat={}{0:N0} bytes}" 
                                               Width="120"/>
                             <DataGridTextColumn Header="Trạng thái" 
                                               Binding="{Binding Status}" 
-                                              Width="120"/>
+                                              Width="110"/>
                             <DataGridCheckBoxColumn Header="Đã ký" 
                                                    Binding="{Binding IsSigned}" 
-                                                   Width="80"/>
+                                                   Width="70"/>
                             <DataGridTextColumn Header="Ngày upload" 
                                               Binding="{Binding UploadedAt, StringFormat={}{0:dd/MM/yyyy HH:mm}}" 
                                               Width="150"/>
@@ -190,6 +220,14 @@
                                   Margin="0,0,0,5"/>
                         <TextBlock Text="{Binding SelectedDocument.OriginalFileName}" 
                                   TextWrapping="Wrap"
+                                  FontSize="12"
+                                  Margin="0,0,0,15"/>
+
+                        <TextBlock Text="Loại tài liệu:" 
+                                  FontWeight="SemiBold"
+                                  FontSize="12"
+                                  Margin="0,0,0,5"/>
+                        <TextBlock Text="{Binding SelectedDocument.DocumentTypeName}" 
                                   FontSize="12"
                                   Margin="0,0,0,15"/>
 

@@ -20,11 +20,17 @@ namespace DigitalSignClient.Views
         // ✅ Constructor cho Designer hoặc nếu mở view trực tiếp (Design-time)
         public DocumentListView()
         {
+            InitializeComponent();
         }
 
         private async void DocumentListView_Loaded(object sender, RoutedEventArgs e)
         {
-            await _viewModel.LoadDocumentsAsync();
+            if (_viewModel != null)
+            {
+                // Load cả Documents và DocumentTypes khi view được load
+                await _viewModel.LoadDocumentTypesAsync(); // Load danh sách loại tài liệu trước
+                await _viewModel.LoadDocumentsAsync();     // Sau đó load danh sách tài liệu
+            }
         }
     }
 }

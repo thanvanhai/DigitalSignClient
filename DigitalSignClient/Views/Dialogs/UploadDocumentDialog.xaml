@@ -1,0 +1,116 @@
+﻿<mah:MetroWindow x:Class="DigitalSignClient.Views.Dialogs.UploadDocumentDialog"
+                 xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                 xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                 xmlns:mah="http://metro.mahapps.com/winfx/xaml/controls"
+                 Title="Upload Tài Liệu" 
+                 Height="450" 
+                 Width="500"
+                 WindowStartupLocation="CenterOwner"
+                 ResizeMode="NoResize"
+                 GlowBrush="{DynamicResource MahApps.Brushes.Accent}"
+                 BorderThickness="1">
+
+    <mah:MetroWindow.Resources>
+        <Style x:Key="ModernButton" TargetType="Button" BasedOn="{StaticResource MahApps.Styles.Button}">
+            <Setter Property="Height" Value="40"/>
+            <Setter Property="Padding" Value="20,0"/>
+            <Setter Property="Margin" Value="5"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+        </Style>
+    </mah:MetroWindow.Resources>
+
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <StackPanel Grid.Row="0" Margin="0,0,0,20">
+            <TextBlock Text="📄 UPLOAD TÀI LIỆU" 
+                      FontSize="18" 
+                      FontWeight="Bold"
+                      Foreground="{DynamicResource MahApps.Brushes.Text}"
+                      HorizontalAlignment="Center"/>
+            <Rectangle Height="2" 
+                      Fill="{DynamicResource MahApps.Brushes.Accent}" 
+                      Margin="0,10,0,0"
+                      Width="100"/>
+        </StackPanel>
+
+        <!-- Content -->
+        <StackPanel Grid.Row="1">
+            <!-- Chọn file -->
+            <TextBlock Text="Chọn file PDF *" 
+                      FontWeight="SemiBold"
+                      FontSize="13"
+                      Margin="0,0,0,8"/>
+            <Grid Margin="0,0,0,20">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <TextBox x:Name="txtFilePath"
+                        Grid.Column="0"
+                        IsReadOnly="True"
+                        mah:TextBoxHelper.Watermark="Chưa chọn file..."
+                        mah:TextBoxHelper.ClearTextButton="False"
+                        FontSize="13"/>
+
+                <Button Grid.Column="1"
+                       Click="BrowseFile_Click"
+                       Content="Chọn file"
+                       Style="{StaticResource ModernButton}"
+                       Margin="10,0,0,0"
+                       Width="120"/>
+            </Grid>
+
+            <!-- Loại tài liệu -->
+            <TextBlock Text="Loại tài liệu *" 
+                      FontWeight="SemiBold"
+                      FontSize="13"
+                      Margin="0,0,0,8"/>
+            <ComboBox x:Name="cmbDocumentType"
+                     ItemsSource="{Binding DocumentTypes}"
+                     DisplayMemberPath="Name"
+                     SelectedItem="{Binding SelectedDocumentType}"
+                     mah:TextBoxHelper.Watermark="Chọn loại tài liệu"
+                     FontSize="13"
+                     Margin="0,0,0,20"/>
+
+            <!-- Mô tả (không bắt buộc) -->
+            <TextBlock Text="Mô tả (tùy chọn)" 
+                      FontWeight="SemiBold"
+                      FontSize="13"
+                      Margin="0,0,0,8"/>
+            <TextBox x:Name="txtDescription"
+                    Height="80"
+                    FontSize="13"
+                    TextWrapping="Wrap"
+                    AcceptsReturn="True"
+                    VerticalScrollBarVisibility="Auto"
+                    mah:TextBoxHelper.Watermark="Nhập mô tả cho tài liệu..."/>
+        </StackPanel>
+
+        <!-- Buttons -->
+        <StackPanel Grid.Row="2" 
+                   Orientation="Horizontal" 
+                   HorizontalAlignment="Right"
+                   Margin="0,20,0,0">
+            <Button Content="HỦY BỎ" 
+                   Click="Cancel_Click"
+                   Style="{StaticResource ModernButton}"/>
+            <Button Content="UPLOAD" 
+                   Click="Upload_Click"
+                   Style="{StaticResource MahApps.Styles.Button.Square.Accent}"
+                   Height="40"
+                   Padding="20,0"
+                   Margin="5"
+                   FontSize="13"
+                   FontWeight="SemiBold"/>
+        </StackPanel>
+    </Grid>
+</mah:MetroWindow>

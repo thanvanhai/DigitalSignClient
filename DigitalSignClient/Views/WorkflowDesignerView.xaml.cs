@@ -16,11 +16,11 @@ using System.Windows.Shapes;
 namespace DigitalSignClient.Views
 {
     /// <summary>
-    /// Interaction logic for WorkflowTemplateView.xaml
+    /// Interaction logic for WorkflowDesignerView.xaml
     /// </summary>
-    public partial class WorkflowTemplateView : UserControl
+    public partial class WorkflowDesignerView : UserControl
     {
-        public WorkflowTemplateView()
+        public WorkflowDesignerView()
         {
             InitializeComponent();
         }

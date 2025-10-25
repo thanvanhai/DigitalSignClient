@@ -14,14 +14,17 @@ namespace DigitalSignClient.ViewModels
     public class DocumentListViewModel : BaseViewModel
     {
         private readonly IDocumentService _documentService;
+        private readonly IDocumentTypeService _documentTypeService;
         private User? _currentUser;
         private Document? _selectedDocument;
         private bool _isLoading;
 
-        public DocumentListViewModel(IDocumentService documentService)
+        public DocumentListViewModel(IDocumentService documentService, IDocumentTypeService documentTypeService)
         {
             _documentService = documentService;
+            _documentTypeService = documentTypeService;
             Documents = new ObservableCollection<Document>();
+            DocumentTypes = new ObservableCollection<DocumentType>();
 
             UploadCommand = new DelegateCommand<object>(async _ => await UploadDocumentAsync());
             RefreshCommand = new DelegateCommand<object>(async _ => await LoadDocumentsAsync());
@@ -37,6 +40,7 @@ namespace DigitalSignClient.ViewModels
         }
 
         public ObservableCollection<Document> Documents { get; }
+        public ObservableCollection<DocumentType> DocumentTypes { get; }
 
         public Document? SelectedDocument
         {
@@ -82,33 +86,104 @@ namespace DigitalSignClient.ViewModels
             }
         }
 
+        // 📋 Load danh sách loại tài liệu
+        public async Task LoadDocumentTypesAsync()
+        {
+            try
+            {
+                // Kiểm tra service có null không
+                if (_documentTypeService == null)
+                {
+                    System.Diagnostics.Debug.WriteLine("⚠️ DocumentTypeService is NULL!");
+                    MessageBox.Show("Lỗi: DocumentTypeService chưa được khởi tạo!", "Lỗi",
+                        MessageBoxButton.OK, MessageBoxImage.Error);
+                    return;
+                }
+
+                var documentTypes = await _documentTypeService.GetAllAsync();
+
+                DocumentTypes.Clear();
+                if (documentTypes != null && documentTypes.Count > 0)
+                {
+                    foreach (var type in documentTypes)
+                    {
+                        if (type != null)
+                            DocumentTypes.Add(type);
+                    }
+                    System.Diagnostics.Debug.WriteLine($"✅ Loaded {DocumentTypes.Count} document types");
+                }
+                else
+                {
+                    System.Diagnostics.Debug.WriteLine("⚠️ Không có loại tài liệu nào");
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Lỗi khi tải loại tài liệu: {ex.Message}\n\nStackTrace: {ex.StackTrace}", "Lỗi",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
         // ⬆ Upload tài liệu mới
         private async Task UploadDocumentAsync()
         {
             try
             {
-                var dialog = new OpenFileDialog
+                // Kiểm tra danh sách loại tài liệu
+                if (DocumentTypes.Count == 0)
                 {
-                    Filter = "PDF Files (*.pdf)|*.pdf",
-                    Title = "Chọn file PDF để upload"
+                    MessageBox.Show("Chưa có loại tài liệu nào. Vui lòng thêm loại tài liệu trước!", "Thông báo",
+                        MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+
+                // Hiển thị dialog upload
+                var uploadDialog = new Views.Dialogs.UploadDocumentDialog(DocumentTypes)
+                {
+                    WindowStartupLocation = WindowStartupLocation.CenterScreen
                 };
 
-                if (dialog.ShowDialog() == true)
+                // Tìm MainWindow (có thể là MetroWindow hoặc Window thường)
+                foreach (Window window in Application.Current.Windows)
                 {
-                    IsLoading = true;
-                    var document = await _documentService.UploadDocumentAsync(dialog.FileName, null);
+                    if (window.IsActive)
+                    {
+                        try
+                        {
+                            uploadDialog.Owner = window;
+                            break;
+                        }
+                        catch
+                        {
+                            // Nếu không set được Owner thì thôi, vẫn mở được
+                        }
+                    }
+                }
 
-                    if (document != null)
-                    {
-                        Documents.Add(document);
-                        MessageBox.Show("Upload thành công!", "Thông báo",
-                            MessageBoxButton.OK, MessageBoxImage.Information);
-                    }
-                    else
-                    {
-                        MessageBox.Show("Upload thất bại!", "Lỗi",
-                            MessageBoxButton.OK, MessageBoxImage.Error);
-                    }
+                if (uploadDialog.ShowDialog() != true)
+                    return;
+
+                // Upload lên server
+                IsLoading = true;
+                var selectedType = uploadDialog.SelectedDocumentType;
+                var description = uploadDialog.Description;
+                var filePath = uploadDialog.FilePath;
+
+                var document = await _documentService.UploadDocumentAsync(
+                    filePath,
+                    description,
+                    selectedType.Id);
+
+                if (document != null)
+                {
+                    Documents.Add(document);
+                    MessageBox.Show("Upload thành công!", "Thông báo",
+                        MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+                else
+                {
+                    MessageBox.Show("Upload thất bại!", "Lỗi",
+                        MessageBoxButton.OK, MessageBoxImage.Error);
                 }
             }
             catch (Exception ex)
