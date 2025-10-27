@@ -22,6 +22,11 @@ namespace DigitalSignClient.Services.Implementations
                 var response = await _httpClient.GetFromJsonAsync<List<WorkflowTemplateDto>>(BaseUrl);
                 return response ?? new List<WorkflowTemplateDto>();
             }
+            catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                // Trường hợp 404 - danh sách rỗng, không phải lỗi
+                return new List<WorkflowTemplateDto>();
+            }
             catch (Exception ex)
             {
                 throw new Exception($"Lỗi khi lấy danh sách workflow: {ex.Message}", ex);
@@ -50,7 +55,6 @@ namespace DigitalSignClient.Services.Implementations
             {
                 var response = await _httpClient.PostAsJsonAsync(BaseUrl, dto);
                 response.EnsureSuccessStatusCode();
-
                 var result = await response.Content.ReadFromJsonAsync<CreatedResponse>();
                 return result ?? throw new Exception("Không nhận được Id từ server");
             }

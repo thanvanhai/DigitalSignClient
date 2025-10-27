@@ -26,6 +26,14 @@ namespace DigitalSignClient.Helpers
             add { CommandManager.RequerySuggested += value; }
             remove { CommandManager.RequerySuggested -= value; }
         }
+
+        /// <summary>
+        /// Thông báo rằng CanExecute đã thay đổi
+        /// </summary>
+        public void RaiseCanExecuteChanged()
+        {
+            CommandManager.InvalidateRequerySuggested();
+        }
     }
 
     /// <summary>
@@ -62,6 +70,14 @@ namespace DigitalSignClient.Helpers
         {
             add { CommandManager.RequerySuggested += value; }
             remove { CommandManager.RequerySuggested -= value; }
+        }
+
+        /// <summary>
+        /// Thông báo rằng CanExecute đã thay đổi
+        /// </summary>
+        public void RaiseCanExecuteChanged()
+        {
+            CommandManager.InvalidateRequerySuggested();
         }
     }
 }

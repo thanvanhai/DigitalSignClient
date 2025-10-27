@@ -1,54 +1,68 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
-using Org.BouncyCastle.Tls;
-using System;
-using System.Data;
-using System.Windows;
+﻿using DigitalSignClient.ViewModels;
 
-namespace DigitalSignClient.ViewModels
+public class WorkflowNodeViewModel : BaseViewModel
 {
-    public partial class WorkflowNodeViewModel : ObservableObject
+    private Guid _id;
+    private string _title = string.Empty;
+    private string _role = string.Empty;
+    private string _signatureType = string.Empty;
+    private string _nodeType = "step";
+    private double _x;
+    private double _y;
+    private int _level;
+    private bool _isSelected;
+
+    public Guid Id
     {
-        [ObservableProperty]
-        private Guid id;
+        get => _id;
+        set => SetProperty(ref _id, value);
+    }
 
-        [ObservableProperty]
-        private Point location;
+    public string Title
+    {
+        get => _title;
+        set => SetProperty(ref _title, value);
+    }
 
-        [ObservableProperty]
-        private string displayName = "New Node";
+    public string Role
+    {
+        get => _role;
+        set => SetProperty(ref _role, value);
+    }
 
-        [ObservableProperty]
-        private string role = "";
+    public string SignatureType
+    {
+        get => _signatureType;
+        set => SetProperty(ref _signatureType, value);
+    }
 
-        [ObservableProperty]
-        private string signatureType = "Chính";
+    public string NodeType
+    {
+        get => _nodeType;
+        set => SetProperty(ref _nodeType, value);
+    }
 
-        [ObservableProperty]
-        private string? description;
+    public double X
+    {
+        get => _x;
+        set => SetProperty(ref _x, value);
+    }
 
-        [ObservableProperty]
-        private string nodeType = "sign"; // "start", "sign", "approval", "parallel", "end"
+    public double Y
+    {
+        get => _y;
+        set => SetProperty(ref _y, value);
+    }
 
-        [ObservableProperty]
-        private int level;
+    public int Level
+    {
+        get => _level;
+        set => SetProperty(ref _level, value);
+    }
 
-        // Nodify properties
-        [ObservableProperty]
-        private bool isSelected;
-
-        public WorkflowNodeViewModel()
-        {
-            Id = Guid.NewGuid();
-        }
-
-        public WorkflowNodeViewModel(Guid id, string role, string signatureType, Point location, string nodeType)
-        {
-            Id = id;
-            Role = role;
-            SignatureType = signatureType;
-            Location = location;
-            NodeType = nodeType;
-            DisplayName = $"{role} ({signatureType})";
-        }
+    public bool IsSelected
+    {
+        get => _isSelected;
+        set => SetProperty(ref _isSelected, value);
     }
 }

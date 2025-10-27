@@ -25,7 +25,8 @@ namespace DigitalSignClient
             services.AddTransient<MainViewModel>();
             services.AddTransient<DocumentListViewModel>();
             services.AddTransient<DocumentTypeViewModel>();            
-            services.AddTransient<WorkflowNodeViewModel>();   
+            services.AddTransient<WorkflowNodeViewModel>();
+            services.AddTransient<WorkflowConnectionViewModel>();
             services.AddTransient<WorkflowDesignerViewModel>();     
 
             // 🔹 Đăng ký Views
